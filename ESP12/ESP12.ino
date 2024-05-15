@@ -42,14 +42,28 @@ void setup() {
   Firebase.reconnectWiFi(true);
 }
 
-int i = 0;
-
 void loop() {
-  timeClient.update();
-  unsigned long epochTime = timeClient.getEpochTime();
-  FirebaseJson json;
-  json.set("x", ++i);
-  Serial.println("send " + String(i));
-  if(!Firebase.RTDB.set(&fbdo, "logs/"+ String(epochTime), &json)) Serial.println("Firebase set log error");
-  delay(5000);
+  if (Serial.available() > 0) {
+    String str = Serial.readString();
+    timeClient.update();
+    unsigned long epochTime = timeClient.getEpochTime();
+    FirebaseJson json;
+    String lat = "";
+    String lon = "";
+    String pm = "";
+    int st = 0;
+    for(int i = 0;i < str.length();i++){
+      if(str[i] == ',') st++;
+      else{
+        if(st == 0) lat += str[i];
+        if(st == 1) lon += str[i];
+        if(st == 2) pm += str[i];
+      }
+    }
+    json.set("lat", lat);
+    json.set("lon", lon);
+    json.set("pm", pm);
+    Serial.println("sending " + lat + ", " + lon + ", " + pm);
+    if(!Firebase.RTDB.set(&fbdo, "logs/"+ String(epochTime), &json)) Serial.println("Firebase set log error");
+  }
 }
