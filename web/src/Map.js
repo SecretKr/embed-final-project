@@ -92,7 +92,7 @@ const CustomMarker = ({ position, index, pm, closeAndShowInformation }) => {
       icon={{
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-            <circle cx="20" cy="20" r="18" fill="#FF0000" />
+            <circle cx="20" cy="20" r="18" fill="#d67018" />
             <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-size="16">
               ${pm}
             </text>

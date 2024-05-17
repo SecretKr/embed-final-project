@@ -31,7 +31,7 @@ const App = () => {
         const longitude = document.createElement("p");
         const pmValue = document.createElement("p");
         location.textContent = `Location: ${list.length}`;
-        timestamp.textContent = `Timestamp: ${doc.key}`;
+        timestamp.textContent = `Timestamp: ${new Date(Number(doc.key*1000)).toString()}`;
         latitude.textContent = `Latitude: ${doc.val().lat}`;
         longitude.textContent = `Longitude: ${doc.val().lon}`;
         pmValue.textContent = `PM Value: ${doc.val().pm}`;
