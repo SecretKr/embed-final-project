@@ -18,24 +18,32 @@ function Map() {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const [data, setData] = useState([]);
+  const [map, setMap] = useState(null);
+  const [markers, setMarkers] = useState([]);
 
   useEffect(() => {
     onValue(ref(db, 'logs'), (snapshot) => {
       const list = [];
       snapshot.forEach((doc) => {
-        list.push({timestamp: doc.key, lat: doc.val().lat, lon: doc.val().lon, pm: doc.val().pm})
-      })
+        const lat = parseFloat(doc.val().lat); // Ensure lat is parsed as a float
+        const lon = parseFloat(doc.val().lon); // Ensure lon is parsed as a float
+        const pm = doc.val().pm;
+        if (!isNaN(lat) && !isNaN(lon)) { // Check if lat and lon are valid numbers
+          list.push({ lat, lon, pm }); // Push valid data to the list
+        } else {
+          console.error("Invalid latitude or longitude value:", doc.val());
+        }
+      });
       setData(list);
-    })
+      // Update markers state with the new data
+      setMarkers(list.map(item => ({ lat: item.lat, lng: item.lon })));
+    });
   }, [db]);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
   });
-
-  const [map, setMap] = useState(null);
-  const [markers, setMarkers] = useState([]);
 
   const onLoad = useCallback(function callback(map) {
     setMap(map);
@@ -81,10 +89,15 @@ function Map() {
   ) : <></>;
 }
 
-const CustomMarker = ({ position, index }) => {
+const CustomMarker = ({ position, index, onClick }) => {
+  const handleMarkerClick = () => {
+    onClick(index);
+  };
+
   return (
     <Marker
       position={position}
+      onClick={handleMarkerClick}
       icon={{
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
@@ -100,6 +113,7 @@ const CustomMarker = ({ position, index }) => {
     />
   );
 };
+
 
 
 export default React.memo(Map);
