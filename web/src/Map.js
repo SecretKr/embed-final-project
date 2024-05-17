@@ -5,8 +5,9 @@ import { getDatabase, onValue, ref } from "firebase/database";
 import firebaseConfig from './config';
 
 const containerStyle = {
-  width: '100%',
-  height: '400px'
+  position: 'flex',
+  width: '80%',
+  height: '100%'
 };
 
 const center = {
