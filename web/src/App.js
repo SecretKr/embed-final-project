@@ -48,25 +48,30 @@ const App = () => {
   }, [db]);
   //--------------------------------------------------
   
-  const closeAndShowInformation = (index, length) => {
-    /*alert(`Button ${index} and length = ${length}`);*/
-    for(var j = 1; j <= length; j++) {
-      if (j !== index) {
-        let tmp = document.getElementById(`information_box_${j}`);
-        if (tmp.style.display === "flex") {
-          tmp.style.display = "none";
-          break;
-        }
-      }
-    }
-    let informationBox = document.getElementById(`information_box_${index}`);
-    if (informationBox.style.display === "none") {
-        informationBox.style.display = "flex";
-    } else {
-        informationBox.style.display = "none";
-    }
-  };
+  let currentOpenBox = null;
 
+const closeAndShowInformation = (index) => {
+  // If there is a currently open box and it's not the one being clicked, close it
+  if (currentOpenBox && currentOpenBox !== index) {
+    const currentBox = document.getElementById(`information_box_${currentOpenBox}`);
+    if (currentBox) {
+      currentBox.style.display = "none";
+    }
+  }
+
+  // Show or hide the information box corresponding to the clicked marker
+  const informationBox = document.getElementById(`information_box_${index}`);
+  if (informationBox) {
+    const currentDisplay = window.getComputedStyle(informationBox).getPropertyValue('display');
+    informationBox.style.display = currentDisplay === 'none' ? 'flex' : 'none';
+
+    // Update the currently open box
+    currentOpenBox = currentDisplay === 'none' ? index : null;
+  } else {
+    console.error(`Information box with ID information_box_${index} not found.`);
+  }
+};
+  
   return (
     <div className="background">
       
@@ -89,7 +94,7 @@ const App = () => {
             <p>Embedded System Laboratory Final Project</p>
         </div>
         <div className="map_container">
-          <Map/>
+          <Map closeAndShowInformation={closeAndShowInformation} />
           <div className="slider">
             <div className="slide_container">
               {data.map((item) => (

@@ -14,7 +14,7 @@ const center = {
   lng: 100.53241
 };
 
-function Map() {
+function Map({ closeAndShowInformation }) {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const [data, setData] = useState([]);
@@ -34,9 +34,9 @@ function Map() {
           console.error("Invalid latitude or longitude value:", doc.val());
         }
       });
-      setData(list);
+      //setData(list);
       // Update markers state with the new data
-      setMarkers(list.map(item => ({ lat: item.lat, lng: item.lon })));
+      setMarkers(list.map(item => ({ lat: item.lat, lng: item.lon , pm: item.pm})));
     });
   }, [db]);
 
@@ -53,17 +53,6 @@ function Map() {
     setMap(null);
   }, []);
 
-  const handleMapClick = (event) => {
-    setMarkers(current => [
-      ...current,
-      {
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng(),
-        time: new Date(),
-      }
-    ]);
-  };
-
   return isLoaded ? (<>
     <div>
       {data.map((item) => (
@@ -76,22 +65,23 @@ function Map() {
       zoom={10}
       onLoad={onLoad}
       onUnmount={onUnmount}
-      onClick={handleMapClick}
     >
       {markers.map((marker, index) => (
         <CustomMarker
-          key={index}
-          position={{ lat: marker.lat, lng: marker.lng }}
-          index={index + 1}
-        />
+        key={index}
+        position={{ lat: marker.lat, lng: marker.lng }}
+        index={index + 1}
+        pm={marker.pm}
+        closeAndShowInformation={closeAndShowInformation}
+      />
       ))}
     </GoogleMap></>
   ) : <></>;
 }
 
-const CustomMarker = ({ position, index, onClick }) => {
+const CustomMarker = ({ position, index, pm, closeAndShowInformation }) => {
   const handleMarkerClick = () => {
-    onClick(index);
+    closeAndShowInformation(index);
   };
 
   return (
@@ -103,7 +93,7 @@ const CustomMarker = ({ position, index, onClick }) => {
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
             <circle cx="20" cy="20" r="18" fill="#FF0000" />
             <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-size="16">
-              ${index}
+              ${pm}
             </text>
           </svg>
         `),
@@ -113,7 +103,6 @@ const CustomMarker = ({ position, index, onClick }) => {
     />
   );
 };
-
 
 
 export default React.memo(Map);
