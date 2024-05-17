@@ -55,7 +55,7 @@ void setup() {
 unsigned long lastSend = 0;
 unsigned long currentTime = 0;
 unsigned long updateTime = 0;
-long interval = 10000;
+long interval = 30000;
 String lat;
 String lon;
 String pm;
