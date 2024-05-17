@@ -20,10 +20,20 @@ WiFiUDP ntpUDP;
 const long  gmtOffset_sec = 25200;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", gmtOffset_sec);
 
+// Serial
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(2, 3); // rx, tx
+
 void setup() {
   Serial.begin(115200);
+  mySerial.begin(9600);
+//  pinMode(16, INPUT_PULLUP);
   WiFi.mode(WIFI_STA);
   WiFiManager wm;
+//  if(!digitalRead(16)){
+//    Serial.println("Reset WiFi");
+//    WiFi.disconnect();
+//  }
   bool res;
   res = wm.autoConnect("ESP12-wifi-setup","password");
   if(!res) Serial.println("Failed to connect");
@@ -42,28 +52,77 @@ void setup() {
   Firebase.reconnectWiFi(true);
 }
 
+unsigned long lastSend = 0;
+unsigned long currentTime = 0;
+unsigned long updateTime = 0;
+long interval = 10000;
+String lat;
+String lon;
+String pm;
+
 void loop() {
-  if (Serial.available() > 0) {
-    String str = Serial.readString();
-    timeClient.update();
-    unsigned long epochTime = timeClient.getEpochTime();
-    FirebaseJson json;
-    String lat = "";
-    String lon = "";
-    String pm = "";
+//  if (mySerial.available() > 0) {
+//    String tlat = "";
+//    String tlon = "";
+//    String tpm = "";
+//    int st = 0;
+//    char ch = mySerial.read();
+//    while(ch != '\n' && mySerial.available()) {
+//      if(ch == ',') st++;
+//      else{
+//        if(st == 0) tlat += ch;
+//        if(st == 1) tlon += ch;
+//        if(st == 2) tpm += ch;
+//      }
+//      ch = mySerial.read();
+//    }
+//    while(mySerial.available() > 0) mySerial.read();
+//    if(tlat.length() >= 5 && tlon.length() >= 5 && tpm.length() >= 1){
+//      lat = tlat;
+//      lon = tlon; 
+//      pm = tpm;
+//      updateTime = millis();
+//      Serial.println("lat: "+lat+" lon: "+lon+" pm2.5: "+pm);
+//    }
+//  }
+  if (mySerial.available() > 0) {
+    String str = mySerial.readString();
+    //Serial.print(str);
+    String tlat = "";
+    String tlon = "";
+    String tpm = "";
     int st = 0;
     for(int i = 0;i < str.length();i++){
       if(str[i] == ',') st++;
       else{
-        if(st == 0) lat += str[i];
-        if(st == 1) lon += str[i];
-        if(st == 2) pm += str[i];
+        if(st == 0) tlat += str[i];
+        if(st == 1) tlon += str[i];
+        if(st == 2) tpm += str[i];
       }
     }
+    if(tlat.length() >= 5 && tlon.length() >= 5 && tpm.length() >= 1){
+      lat = tlat;
+      lon = tlon; 
+      pm = tpm;
+      updateTime = millis();
+      Serial.println("lat: "+lat+" lon: "+lon+" pm2.5: "+pm);
+    }
+  }
+  
+  currentTime = millis();
+  if (currentTime-lastSend >= interval && currentTime-updateTime < interval && lat != ""){
+    lastSend = currentTime;
+    timeClient.update();
+    unsigned long epochTime = timeClient.getEpochTime();
+    FirebaseJson json;
     json.set("lat", lat);
     json.set("lon", lon);
     json.set("pm", pm);
-    Serial.println("sending " + lat + ", " + lon + ", " + pm);
+    Serial.print("sending " + lat + ", " + lon + ", " + pm);
     if(!Firebase.RTDB.set(&fbdo, "logs/"+ String(epochTime), &json)) Serial.println("Firebase set log error");
+    Serial.println("  sent!!");
   }
+//  if (mySerial.available() > 0) {
+//    Serial.write(mySerial.read());
+//  }
 }
