@@ -3,7 +3,7 @@ import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { initializeApp } from "firebase/app"
 import { getDatabase, onValue, ref } from "firebase/database";
 import firebaseConfig from './config';
-import DustScoreMarker from './DustScoreMarker';
+import DustScoreSuperMarker from './DustScoreSuperMarker'; // Import the new supercluster-based marker component
 
 const containerStyle = {
   position: 'flex',
@@ -16,7 +16,7 @@ const center = {
   lng: 100.53241
 };
 
-function Map({ closeAndShowInformation }) {
+function Map() {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const [data, setData] = useState([]);
@@ -36,7 +36,7 @@ function Map({ closeAndShowInformation }) {
           console.error("Invalid latitude or longitude value:", doc.val());
         }
       });
-      //setData(list);
+      setData(list);
       // Update markers state with the new data
       setMarkers(list.map(item => ({ lat: item.lat, lng: item.lon , pm: item.pm})));
     });
@@ -55,12 +55,7 @@ function Map({ closeAndShowInformation }) {
     setMap(null);
   }, []);
 
-  return isLoaded ? (<>
-    <div>
-      {data.map((item) => (
-        <p key={item.timestamp}>lat: {item.lat}, lon: {item.lon}, pm: {item.pm}</p>
-      ))}
-    </div>
+  return isLoaded ? (
     <GoogleMap
       mapContainerStyle={containerStyle}
       center={center}
@@ -68,18 +63,10 @@ function Map({ closeAndShowInformation }) {
       onLoad={onLoad}
       onUnmount={onUnmount}
     >
-      {markers.map((marker, index) => (
-        <DustScoreMarker
-        key={index}
-        position={{ lat: marker.lat, lng: marker.lng }}
-        index={index + 1}
-        pm={marker.pm}
-        closeAndShowInformation={closeAndShowInformation}
-      />
-      ))}
-    </GoogleMap></>
+      {/* Replace direct rendering of markers with DustScoreSuperMarker */}
+      <DustScoreSuperMarker markers={markers} zoom={10} />
+    </GoogleMap>
   ) : <></>;
 }
-
 
 export default React.memo(Map);
