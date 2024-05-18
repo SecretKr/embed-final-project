@@ -1,8 +1,7 @@
 import React from 'react';
 import DustScoreMarker from './DustScoreMarker';
-import closeAndShowInformation from './App';
 
-const DustScoreSuperMarker = ({ markers }) => {
+const DustScoreSuperMarker = ({ markers , closeAndShowInformation}) => {
   // Render DustScoreMarker components
   const renderMarkers = () => {
     return markers.map((marker, index) => (

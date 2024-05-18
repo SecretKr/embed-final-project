@@ -16,7 +16,7 @@ const center = {
   lng: 100.53241
 };
 
-function Map() {
+function Map({closeAndShowInformation}) {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const [data, setData] = useState([]);
@@ -64,7 +64,7 @@ function Map() {
       onUnmount={onUnmount}
     >
       {/* Replace direct rendering of markers with DustScoreSuperMarker */}
-      <DustScoreSuperMarker markers={markers} zoom={10} />
+      <DustScoreSuperMarker markers={markers} closeAndShowInformation = {closeAndShowInformation} zoom={10} />
     </GoogleMap>
   ) : <></>;
 }
