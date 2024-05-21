@@ -100,31 +100,39 @@ void parsePMS5003Data(uint8_t *buffer) {
   data.checksum = (buffer[30] << 8) | buffer[31];
 }
 
-uint8_t pmBuffer[32];
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-//uint8_t readPMSdata(UART_HandleTypeDef *huart) {
-  //uint8_t buffer[32];
+uint8_t readPMSdata(UART_HandleTypeDef *huart) {
+  uint8_t buffer[32];
   uint16_t sum = 0;
 
   /* Receive data from UART */
-//  if (HAL_UART_Receive(huart, buffer, 32, 1000) != HAL_OK) {
-//    return 0;
-//  }
+  if (HAL_UART_Receive(huart, buffer, 32, 1000) != HAL_OK) {
+    return 0;
+  }
 
   /* Check for start byte */
-  if (pmBuffer[0] == 0x42) {
-
-	  /* Calculate checksum */
-	  for (uint8_t i = 0; i < 30; i++) {
-		sum += pmBuffer[i];
-	  }
-	  parsePMS5003Data(pmBuffer);
+  if (buffer[0] != 0x42) {
+    return 0;
   }
-  HAL_UART_Receive_IT (&huart6, pmBuffer, 32);
-  //return 1;
+
+  /* Calculate checksum */
+  for (uint8_t i = 0; i < 30; i++) {
+    sum += buffer[i];
+  }
+
+  /* Compare checksums */
+  /*if (sum != data.checksum) {
+    return 0;
+  }*/
+
+  /* Parse received data */
+  /* Implement parsePMS5003Data() function if required */
+  // Parse the received data
+  parsePMS5003Data(buffer);
+
+  return 1;
 }
 
-// ================================================ GPS ================================================
+// GPS
 #define uart &huart1
 
 #define TIMEOUT_DEF 500  // 500ms timeout
@@ -429,13 +437,27 @@ void Uart_isr (UART_HandleTypeDef *huart)
 {
 	  uint32_t isrflags   = READ_REG(huart->Instance->SR);
 	  uint32_t cr1its     = READ_REG(huart->Instance->CR1);
+
+    /* if DR is not empty and the Rx Int is enabled */
     if (((isrflags & USART_SR_RXNE) != RESET) && ((cr1its & USART_CR1_RXNEIE) != RESET))
     {
+    	 /******************
+    	    	      *  @note   PE (Parity error), FE (Framing error), NE (Noise error), ORE (Overrun
+    	    	      *          error) and IDLE (Idle line detected) flags are cleared by software
+    	    	      *          sequence: a read operation to USART_SR register followed by a read
+    	    	      *          operation to USART_DR register.
+    	    	      * @note   RXNE flag can be also cleared by a read to the USART_DR register.
+    	    	      * @note   TC flag can be also cleared by software sequence: a read operation to
+    	    	      *          USART_SR register followed by a write operation to USART_DR register.
+    	    	      * @note   TXE flag is cleared only by a write to the USART_DR register.
+
+    	 *********************/
 		huart->Instance->SR;                       /* Read status register */
         unsigned char c = huart->Instance->DR;     /* Read data register */
         store_char (c, _rx_buffer);  // store data in buffer
         return;
     }
+
     /*If interrupt is caused due to Transmit Data Register Empty */
     if (((isrflags & USART_SR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
     {
@@ -443,14 +465,30 @@ void Uart_isr (UART_HandleTypeDef *huart)
     	    {
     	      // Buffer empty, so disable interrupts
     	      __HAL_UART_DISABLE_IT(huart, UART_IT_TXE);
+
     	    }
+
     	 else
     	    {
     	      // There is more data in the output buffer. Send the next byte
     	      unsigned char c = tx_buffer.buffer[tx_buffer.tail];
     	      tx_buffer.tail = (tx_buffer.tail + 1) % UART_BUFFER_SIZE;
+
+    	      /******************
+    	      *  @note   PE (Parity error), FE (Framing error), NE (Noise error), ORE (Overrun
+    	      *          error) and IDLE (Idle line detected) flags are cleared by software
+    	      *          sequence: a read operation to USART_SR register followed by a read
+    	      *          operation to USART_DR register.
+    	      * @note   RXNE flag can be also cleared by a read to the USART_DR register.
+    	      * @note   TC flag can be also cleared by software sequence: a read operation to
+    	      *          USART_SR register followed by a write operation to USART_DR register.
+    	      * @note   TXE flag is cleared only by a write to the USART_DR register.
+
+    	      *********************/
+
     	      huart->Instance->SR;
     	      huart->Instance->DR = c;
+
     	    }
     	return;
     }
@@ -539,7 +577,6 @@ int decodeGGA(char *GGAbuffer, GGASTRUCT *gga){
 		int declen = (strlen(buffer))-j;  // calculate the number of digit after decimal
 		int dec = atoi ((char *) buffer+j);  // conver the decimal part a a separate number
 		float lat = (int)(num/100) + (((num%100) + (dec/pow(10, declen)))/60);  // 1234.56789 = 12.3456789
-		//float lat = num + (dec/pow(10, declen));  // 1234.56789 = 12.3456789
 		if(lat > 500) return 2;
 		gga->location.latitude = lat;  // save the lattitude data into the strucure
 		inx++;
@@ -562,7 +599,6 @@ int decodeGGA(char *GGAbuffer, GGASTRUCT *gga){
 		dec =  atoi ((char *)buffer+j);
 		lat = (float)((int)(num/100) + (((num%100) + (dec/pow(10, declen)))/60));
 		if(lat > 500) return 2;
-		//lat = num + (dec/pow(10, declen));
 		gga->location.longitude=lat;
 		inx++;
 		gga->location.EW=GGAbuffer[inx];
@@ -649,18 +685,18 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
-  HAL_UART_Receive_IT (&huart6, pmBuffer, 32);
   /* USER CODE BEGIN 2 */
   Ringbuf_init();
   HAL_Delay(500);
+
+  uint8_t printBuffer[200];
+  uint8_t sendBuffer[200];
   /* USER CODE END 2 */
-  char printBuffer[200];
-  char sendBuffer[200];
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  flagGGA = 0;
 	  if (Wait_for("GGA") == 1)
 	  {
 		  VCCTimeout = 5000;  // Reset the VCC Timeout indicating the GGA is being received
@@ -675,11 +711,13 @@ int main(void)
 		  {
 			  sprintf(printBuffer, "latitude: %.6f, longitude: %.6f\r\n", gpsData.ggastruct.location.latitude, gpsData.ggastruct.location.longitude);
 			  HAL_UART_Transmit(&huart2, (uint8_t*)printBuffer, strlen(printBuffer), HAL_MAX_DELAY);
-		 	  sprintf(printBuffer, "PM1: %d, PM2.5: %d, PM10: %d\r\n", data.pm10_standard, data.pm25_standard, data.pm100_standard);
-		 	  HAL_UART_Transmit(&huart2, (uint8_t *)printBuffer, strlen(printBuffer), HAL_MAX_DELAY);
+			  sprintf(printBuffer, "PM1: %d, PM2.5: %d, PM10: %d\r\n", data.pm10_standard, data.pm25_standard, data.pm100_standard);
+			  HAL_UART_Transmit(&huart2, (uint8_t *)printBuffer, strlen(printBuffer), HAL_MAX_DELAY);
 
-			  sprintf(sendBuffer, "%.6f,%.6f,%d,\r\n", gpsData.ggastruct.location.latitude, gpsData.ggastruct.location.longitude, data.pm25_standard);
-			  HAL_UART_Transmit_IT(&huart6, (uint8_t*)sendBuffer, strlen(sendBuffer));
+			  sprintf(sendBuffer, "%.6f,%.6f,%d,\r\n	", gpsData.ggastruct.location.latitude, gpsData.ggastruct.location.longitude, data.pm25_standard);
+			  HAL_UART_Transmit(&huart6, (uint8_t*)sendBuffer, strlen(sendBuffer), HAL_MAX_DELAY);
+			  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+			  data.pm25_standard = 0;
 		  }
 
 	 else if ((flagGGA == 1))
@@ -687,7 +725,12 @@ int main(void)
 		// Instead of clearing the display, it's better if we print spaces.
 		// This will avoid the "refreshing" part
 		 char x[10];
-		 sprintf(x,"data is invalid\r\n");
+		 sprintf(x,"GPS data is invalid\r\n");
+		 HAL_UART_Transmit(&huart2, (uint8_t*)x, strlen(x), HAL_MAX_DELAY);
+	 }
+	 else {
+		 char x[10];
+		 sprintf(x,"No recent PM2.5 data\r\n");
 		 HAL_UART_Transmit(&huart2, (uint8_t*)x, strlen(x), HAL_MAX_DELAY);
 	 }
 	 if (VCCTimeout <= 0)
@@ -697,13 +740,32 @@ int main(void)
 		 char x = '1';
 		 //HAL_UART_Transmit(&huart2, x, strlen(x), HAL_MAX_DELAY);
 	 }
- 	  // Print data to PuTTY or other serial monitor
-//	  if (readPMSdata(&huart6))
-//		{
-//		  // Reading data was successful
-//		  HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
-//		}
- 	  HAL_Delay(100);
+	 if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)){
+		 uint8_t test[] = "13.746180,100.539258,999\r\n";
+		 HAL_UART_Transmit(&huart6, (uint8_t*)test, strlen(test), HAL_MAX_DELAY);
+		 HAL_UART_Transmit(&huart2, (uint8_t*)test, strlen(test), HAL_MAX_DELAY);
+		 while(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13));
+	 }
+
+	 while(data.pm25_standard == 0){
+		 if (readPMSdata(&huart6))
+		{
+		  // Reading data was successful
+		  HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
+		  // Print data to PuTTY or other serial monitor
+		  //char printBuffer[200]; // Adjust size according to your needs
+		  //sprintf(printBuffer, "PM1: %d, PM2.5: %d, PM10: %d\r\n", data.pm10_standard, data.pm25_standard, data.pm100_standard);
+		  //HAL_UART_Transmit(&huart2, (uint8_t *)printBuffer, strlen(printBuffer), 100);
+		}
+		 if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)){
+			 uint8_t test[] = "13.746180,100.539258,999\r\n";
+			 HAL_UART_Transmit(&huart6, (uint8_t*)test, strlen(test), HAL_MAX_DELAY);
+			 HAL_UART_Transmit(&huart2, (uint8_t*)test, strlen(test), HAL_MAX_DELAY);
+			 while(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13));
+		 }
+	 }
+
+	  HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -876,9 +938,6 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
-
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -891,13 +950,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PC4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
