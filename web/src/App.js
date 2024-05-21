@@ -9,7 +9,7 @@ const App = () => {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const [data, setData] = useState([]);
-  let currentOpenBox = null;
+  const [currentOpenBox, setCurrentOpenBox] = useState();
 
   const createInformationBox = (doc, index) => {
     const informationBox = document.createElement("div");
@@ -66,7 +66,7 @@ const App = () => {
     if (informationBox) {
       const currentDisplay = window.getComputedStyle(informationBox).getPropertyValue('display');
       informationBox.style.display = currentDisplay === 'none' ? 'flex' : 'none';
-      currentOpenBox = currentDisplay === 'none' ? index : null;
+      setCurrentOpenBox(currentDisplay === 'none' ? index : null);
     } else {
       console.error(`Information box with ID information_box_${index} not found.`);
     }
