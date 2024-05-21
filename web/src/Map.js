@@ -1,72 +1,90 @@
-import React, { useCallback, useState, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
-import { initializeApp } from "firebase/app"
+import "./styles.css";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
+import { divIcon, point } from "leaflet";
+import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref } from "firebase/database";
 import firebaseConfig from './config';
-import DustScoreSuperMarker from './DustScoreSuperMarker'; // Import the new supercluster-based marker component
 
-const containerStyle = {
-  position: 'flex',
-  width: '80%',
-  height: '100%'
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Function to create custom icon with PM value
+const createCustomIcon = (pm) => {
+  return new divIcon({
+    html: `<span class="custom-icon">${pm}</span>`,
+    className: "custom-icon",
+    iconSize: point(38, 38, true),
+  });
 };
 
-const center = {
-  lat: 13.73826,
-  lng: 100.53241
+// Custom cluster icon function to show average PM value
+const createClusterCustomIcon = (cluster) => {
+  const markers = cluster.getAllChildMarkers();
+  const totalPm = markers.reduce((acc, marker) => acc + parseFloat(marker.options.pm), 0);
+  const avgPm = (totalPm / markers.length).toFixed(2);
+
+  return new divIcon({
+    html: `<span class="cluster-icon">${avgPm}</span>`,
+    className: "custom-marker-cluster",
+    iconSize: point(33, 33, true),
+  });
 };
 
-function Map({closeAndShowInformation}) {
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const [data, setData] = useState([]);
-  const [map, setMap] = useState(null);
+const Map = ({ closeAndShowInformation }) => {
   const [markers, setMarkers] = useState([]);
 
   useEffect(() => {
-    onValue(ref(db, 'logs'), (snapshot) => {
-      const list = [];
-      snapshot.forEach((doc) => {
-        const lat = parseFloat(doc.val().lat); // Ensure lat is parsed as a float
-        const lon = parseFloat(doc.val().lon); // Ensure lon is parsed as a float
-        const pm = doc.val().pm;
-        if (!isNaN(lat) && !isNaN(lon)) { // Check if lat and lon are valid numbers
-          list.push({ lat, lon, pm }); // Push valid data to the list
-        } else {
-          console.error("Invalid latitude or longitude value:", doc.val());
-        }
+    const fetchMarkers = () => {
+      onValue(ref(db, 'logs'), (snapshot) => {
+        const list = [];
+        snapshot.forEach((doc) => {
+          const lat = parseFloat(doc.val().lat);
+          const lon = parseFloat(doc.val().lon);
+          const pm = doc.val().pm;
+          if (!isNaN(lat) && !isNaN(lon)) {
+            list.push({
+              idx: list.length + 1,
+              geocode: [lat, lon],
+              pm,
+            });
+          } else {
+            console.error("Invalid latitude or longitude value:", doc.val());
+          }
+        });
+        setMarkers(list);
       });
-      setData(list);
-      // Update markers state with the new data
-      setMarkers(list.map(item => ({ lat: item.lat, lng: item.lon , pm: item.pm})));
-    });
-  }, [db]);
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
-  });
-
-  const onLoad = useCallback(function callback(map) {
-    setMap(map);
+    };
+    fetchMarkers();
   }, []);
 
-  const onUnmount = useCallback(function callback(map) {
-    setMap(null);
-  }, []);
+  return (
+    <MapContainer center={[13.73826, 100.53241]} zoom={13}>
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <MarkerClusterGroup
+        chunkedLoading
+        iconCreateFunction={createClusterCustomIcon}
+      >
+        {markers.map((marker) => (
+          <Marker
+            key={marker.geocode.toString()}
+            position={marker.geocode}
+            icon={createCustomIcon(marker.pm)}
+            pm={marker.pm}
+            eventHandlers={{
+              click: () => closeAndShowInformation(marker.idx),
+            }}
+          />
+        ))}
+      </MarkerClusterGroup>
+    </MapContainer>
+  );
+};
 
-  return isLoaded ? (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={center}
-      zoom={10}
-      onLoad={onLoad}
-      onUnmount={onUnmount}
-    >
-      {/* Replace direct rendering of markers with DustScoreSuperMarker */}
-      <DustScoreSuperMarker markers={markers} closeAndShowInformation = {closeAndShowInformation} zoom={10} />
-    </GoogleMap>
-  ) : <></>;
-}
-
-export default React.memo(Map);
+export default Map;
