@@ -31,6 +31,7 @@
 #include "stdlib.h"
 #include "strings.h"
 #include "math.h"
+#include "DHT.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -652,6 +653,10 @@ char lcdBuffer [50];
 
 
 int VCCTimeout = 5000;
+
+DHT_DataTypedef DHT22_Data;
+float Temperature, Humidity;
+float temp = 0, hum = 0;
 /* USER CODE END 0 */
 
 /**
@@ -697,6 +702,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+
 	  if (Wait_for("GGA") == 1)
 	  {
 		  VCCTimeout = 5000;  // Reset the VCC Timeout indicating the GGA is being received
@@ -713,8 +720,15 @@ int main(void)
 			  HAL_UART_Transmit(&huart2, (uint8_t*)printBuffer, strlen(printBuffer), HAL_MAX_DELAY);
 			  sprintf(printBuffer, "PM1: %d, PM2.5: %d, PM10: %d\r\n", data.pm10_standard, data.pm25_standard, data.pm100_standard);
 			  HAL_UART_Transmit(&huart2, (uint8_t *)printBuffer, strlen(printBuffer), HAL_MAX_DELAY);
+//			  DHT_GetData(&DHT22_Data);
+//			  temp = DHT22_Data.Temperature/10;
+//			  hum = DHT22_Data.Humidity/10;
+//
+//			  sprintf(printBuffer, "Temp: %.1f, Hum: %.1f\r\n", temp, hum);
+//			  HAL_UART_Transmit(&huart2, (uint8_t *)printBuffer, strlen(printBuffer), HAL_MAX_DELAY);
 
-			  sprintf(sendBuffer, "%.6f,%.6f,%d,\r\n	", gpsData.ggastruct.location.latitude, gpsData.ggastruct.location.longitude, data.pm25_standard);
+			  //sprintf(sendBuffer, "%.6f,%.6f,%d,%.1f%.1f\r\n	", gpsData.ggastruct.location.latitude, gpsData.ggastruct.location.longitude, data.pm25_standard, temp, hum);
+			  sprintf(sendBuffer, "%.6f,%.6f,%d\r\n	", gpsData.ggastruct.location.latitude, gpsData.ggastruct.location.longitude, data.pm25_standard);
 			  HAL_UART_Transmit(&huart6, (uint8_t*)sendBuffer, strlen(sendBuffer), HAL_MAX_DELAY);
 			  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 			  data.pm25_standard = 0;
@@ -750,12 +764,7 @@ int main(void)
 	 while(data.pm25_standard == 0){
 		 if (readPMSdata(&huart6))
 		{
-		  // Reading data was successful
 		  HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
-		  // Print data to PuTTY or other serial monitor
-		  //char printBuffer[200]; // Adjust size according to your needs
-		  //sprintf(printBuffer, "PM1: %d, PM2.5: %d, PM10: %d\r\n", data.pm10_standard, data.pm25_standard, data.pm100_standard);
-		  //HAL_UART_Transmit(&huart2, (uint8_t *)printBuffer, strlen(printBuffer), 100);
 		}
 		 if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)){
 			 uint8_t test[] = "13.746180,100.539258,999\r\n";
@@ -764,6 +773,7 @@ int main(void)
 			 while(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13));
 		 }
 	 }
+
 
 	  HAL_Delay(100);
     /* USER CODE END WHILE */
@@ -938,6 +948,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -950,6 +963,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
