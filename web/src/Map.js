@@ -8,6 +8,12 @@ import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref } from "firebase/database";
 import firebaseConfig from './config';
 
+const containerStyle = {
+  position: 'flex',
+  width: '80%',
+  height: '100%'
+};
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -62,7 +68,7 @@ const Map = ({ closeAndShowInformation }) => {
   }, []);
 
   return (
-    <MapContainer center={[13.73826, 100.53241]} zoom={13}>
+    <MapContainer mapContainerStyle={containerStyle} center={[13.73826, 100.53241]} zoom={13}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

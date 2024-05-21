@@ -52,6 +52,8 @@
 }
 .title_information {
   position: flex;
+  margin-top: 20px;
+  margin-bottom: auto;
   font-family: 'Inter', sans-serif;
   color: black;
   font-size: 180%;
@@ -109,6 +111,7 @@
 }
 .title_page {
   position: flex;
+  margin-top: 20px;
   font-family: 'Inter', sans-serif;
   color: black;
   font-size: 180%;
@@ -116,6 +119,7 @@
 }
 .map_container {
   position: flex;
+  margin-top: auto;
   margin-bottom: auto;
   display: flex;
   flex-direction: row;
