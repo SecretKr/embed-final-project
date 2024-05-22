@@ -92,7 +92,7 @@ const App = () => {
           <p>Embedded System Laboratory Final Project</p>
         </div>
         <div className="map_container">
-          <Map closeAndShowInformation={closeAndShowInformation} />
+          <Map className="map" closeAndShowInformation={closeAndShowInformation} />
           <div className="slider">
             <div className="slide_container">
               {data.map((item) => (
