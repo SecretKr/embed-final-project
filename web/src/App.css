@@ -1,7 +1,5 @@
 .information {
-  height: 100%;
-  width: 20%;
-  position: fixed;
+  width: 20vw;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -22,7 +20,7 @@
 }
 
 .information_box_container {
-  width: 60%;
+  width: 90%;
   height: 80%;
   margin-top: auto;
   margin-bottom: auto;
@@ -46,23 +44,24 @@
 }
 
 .name {
-  margin-top: auto;
-  padding: 20px;
+  padding: 15px;
   font-family: 'Inter', sans-serif;
   color: black;
-  font-size: 100%;
+  font-size: 1.1rem;
+}
+
+.background {
+  display: flex;
+  flex-direction: row;
 }
 
 .page {
-  height: 100%;
-  width: 80%;
-  position: fixed;
+  height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  top: 0;
-  right: 0;
   background-color: lightyellow;
   border: 2px solid black;
 }
@@ -84,18 +83,20 @@
   align-items: center;
   top: 50%;
   left: 50%;
-  width: 90%;
-  height: 80%;
+  width: 100%;
+  height: 90%;
+  padding: 16px;
 }
 
 .slider {
   margin-left: auto;
-  width: 17%;
-  height: 80%;
+  width: 19%;
+  height: 100%;
   background-color: lightblue;
   overflow-y: scroll;
   display: flex;
   flex-direction: column;
+  border-radius: 1rem;
 }
 
 .slide_container {
@@ -119,48 +120,77 @@
 
 /* Responsive Styles */
 @media (max-width: 1500px) {
+  .information {
+    width: 20rem;
+  }
+
   .title_information, .title_page {
-    font-size: 3vw;
+    font-size: 2rem;
   }
 
   .information_box {
-    font-size: 1.5vw;
-    padding: 1vw;
+    font-size: 1.2rem;
   }
 
   .name {
-    font-size: 1.5vw;
+    font-size: 1.4rem;
   }
 
   .slide_container {
-    padding: 1vw;
-    gap: 1vw;
+    padding: 8px;
+    gap: 8px;
   }
 
   .button {
-    font-size: 1.5vw;
-    height: 4vw;
+    font-size: 0.9rem;
+    height: 2.6rem;
+    margin: 0;
   }
 }
 
 @media (max-width: 800px) {
+  .ll {
+    display: none;
+  }
+
+  .background {
+    flex-direction: column;
+  }
+
   .information {
     width: 100%;
-    height: 40%;
+    flex-direction: row;
+    padding: 8px;
+    height: 20vh;
+  }
+
+  .map_container {
+    padding: 4px;
+  }
+
+  .information_box_container {
+    width: 80vw;
+    height: 18vh;
+  }
+
+  .information_box {
+    font-size: 1rem;
+  }
+
+  .title_information {
+    display: none;
+  }
+  .title_page {
+    font-size: 1.6rem;
   }
 
   .page {
     width: 100%;
-    height: 60%;
-    top: 40%;
-  }
-
-  .information_box {
-    font-size: 2.5vw;
-    padding: 1vw;
+    height: 80vh;
   }
 
   .name {
-    font-size: 2.5vw;
+    font-size: 0.8rem;
+    padding: 10px;
   }
 }

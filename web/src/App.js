@@ -24,7 +24,7 @@ const App = () => {
     };
 
     informationBox.appendChild(createParagraph(`Location: ${index}`));
-    informationBox.appendChild(createParagraph(`Timestamp: ${new Date(Number(doc.key * 1000)).toString()}`));
+    informationBox.appendChild(createParagraph(`Timestamp: ${new Date(Number(doc.key * 1000)).toLocaleString('en-us')}`));
     informationBox.appendChild(createParagraph(`Latitude: ${doc.val().lat}`));
     informationBox.appendChild(createParagraph(`Longitude: ${doc.val().lon}`));
     informationBox.appendChild(createParagraph(`PM Value: ${doc.val().pm}`));
@@ -97,7 +97,7 @@ const App = () => {
             <div className="slide_container">
               {data.map((item) => (
                 <button key={item.index} className="button" onClick={() => closeAndShowInformation(item.index)}>
-                  Location {item.index}
+                  <p className="ll">Location </p>{item.index}
                 </button>
               ))}
             </div>
