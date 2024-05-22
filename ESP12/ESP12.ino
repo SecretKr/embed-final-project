@@ -59,38 +59,18 @@ long interval = 5000;
 String lat;
 String lon;
 String pm;
+String temp;
+String hum;
 
 void loop() {
-//  if (mySerial.available() > 0) {
-//    String tlat = "";
-//    String tlon = "";
-//    String tpm = "";
-//    int st = 0;
-//    char ch = mySerial.read();
-//    while(ch != '\n' && mySerial.available()) {
-//      if(ch == ',') st++;
-//      else{
-//        if(st == 0) tlat += ch;
-//        if(st == 1) tlon += ch;
-//        if(st == 2) tpm += ch;
-//      }
-//      ch = mySerial.read();
-//    }
-//    while(mySerial.available() > 0) mySerial.read();
-//    if(tlat.length() >= 5 && tlon.length() >= 5 && tpm.length() >= 1){
-//      lat = tlat;
-//      lon = tlon; 
-//      pm = tpm;
-//      updateTime = millis();
-//      Serial.println("lat: "+lat+" lon: "+lon+" pm2.5: "+pm);
-//    }
-//  }
   if (mySerial.available() > 0) {
     String str = mySerial.readString();
     //Serial.print(str);
     String tlat = "";
     String tlon = "";
     String tpm = "";
+    String ttemp = "";
+    String thum = "";
     int st = 0;
     for(int i = 0;i < str.length();i++){
       if(str[i] == ',') st++;
@@ -98,14 +78,18 @@ void loop() {
         if(st == 0) tlat += str[i];
         if(st == 1) tlon += str[i];
         if(st == 2) tpm += str[i];
+        if(st == 3) ttemp += str[i];
+        if(st == 4) thum += str[i];
       }
     }
     if(tlat.length() >= 5 && tlon.length() >= 5 && tpm.length() >= 1){
       lat = tlat;
       lon = tlon; 
       pm = tpm;
+      temp = ttemp;
+      hum = thum;
       updateTime = millis();
-      Serial.println("lat: "+lat+" lon: "+lon+" pm2.5: "+pm);
+      Serial.println("lat: "+lat+" lon: "+lon+" pm2.5: "+pm+" temp: "+temp+" hum: "+hum);
     }
   }
   
@@ -118,11 +102,10 @@ void loop() {
     json.set("lat", lat);
     json.set("lon", lon);
     json.set("pm", pm);
-    Serial.print("sending " + lat + ", " + lon + ", " + pm);
+    json.set("temp", temp);
+    json.set("hum", hum);
+    Serial.print("sending " + lat + ", " + lon + ", " + pm + ", " + temp + ", " + hum);
     if(!Firebase.RTDB.set(&fbdo, "logs/"+ String(epochTime), &json)) Serial.println("Firebase set log error");
     Serial.println("  sent!!");
-  }
-//  if (mySerial.available() > 0) {
-//    Serial.write(mySerial.read());
-//  }
+  } 
 }
