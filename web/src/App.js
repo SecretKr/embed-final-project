@@ -24,7 +24,7 @@ const App = () => {
     };
 
     informationBox.appendChild(createParagraph(`Location: ${index}`));
-    informationBox.appendChild(createParagraph(`Timestamp: ${new Date(Number(doc.key * 1000)).toLocaleString('en-us')}`));
+    informationBox.appendChild(createParagraph(`Timestamp: ${new Date(Number(doc.key * 1000 - 7*3600000)).toLocaleString('en-us')}`));
     informationBox.appendChild(createParagraph(`Latitude: ${doc.val().lat}`));
     informationBox.appendChild(createParagraph(`Longitude: ${doc.val().lon}`));
     informationBox.appendChild(createParagraph(`PM Value: ${doc.val().pm}`));
